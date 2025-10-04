@@ -1,30 +1,29 @@
 # Base image
 FROM python:3.11-slim
 
-# Create a non-root user with UID 1000 and home directory
-RUN useradd -m -u 1000 appuser
-
-# Set working directory
+# Create working directory
 WORKDIR /app
 
-# Copy requirements first to leverage Docker cache
-COPY requirements.txt .
+# Create non-root user with UID 1000 and set permissions
+RUN adduser --disabled-password --gecos '' --uid 1000 appuser && \
+    chown -R 1000:1000 /app
 
-# Install Python dependencies
+# Copy requirements and install dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all project files into container
+# Copy source code after installing deps
 COPY . .
 
 # Set environment variables
 ENV APP_PORT=7126
 
-# Expose the app port
+# Expose port
 EXPOSE 7126
 
-# Switch to non-root user (UID 1000 explicitly)
+# Explicitly switch to UID 1000 (this is the key line)
 USER 1000
 
-# Run the FastAPI app
+# Launch FastAPI app
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7126"]
 
