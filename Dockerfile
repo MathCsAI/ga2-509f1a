@@ -1,32 +1,28 @@
-# Use the official Python 3.11 slim image as a parent image
+# Base image
 FROM python:3.11-slim
 
-# Set the working directory in the container
-WORKDIR /code
+# Create working directory
+WORKDIR /app
 
-# Create a non-root user 'appuser' with UID 1000
-RUN useradd -m -u 1000 appuser
-USER appuser
+# Create non-root user with UID 1000 and set permissions
+RUN adduser --disabled-password --gecos '' --uid 1000 appuser && \
+    chown -R 1000:1000 /app
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-# Set the application port, which will be used by uvicorn
-ENV APP_PORT=7126
-
-# Copy the requirements file into the container at /code
+# Copy requirements and install dependencies
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
-
-# Copy the rest of the application code into the container
+# Copy source code after installing deps
 COPY . .
 
-# Expose the port the app runs on
+# Set environment variables
+ENV APP_PORT=7126
+
+# Expose port
 EXPOSE 7126
 
-# Run uvicorn server.
-# Use 0.0.0.0 to make it accessible from outside the container.
-# The port is read from the environment variable.
+# Explicitly switch to UID 1000 (this is the key line)
+USER 1000
+
+# Launch FastAPI app
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7126"]
