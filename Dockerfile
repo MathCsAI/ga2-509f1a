@@ -1,28 +1,37 @@
-# Base image
+# Use official Python slim image
 FROM python:3.11-slim
 
-# Create working directory
+# Create UID 1000 user and group, with home directory
+RUN groupadd -g 1000 appgroup \
+ && useradd -m -u 1000 -g appgroup appuser
+
+# Create app directory owned by UID 1000
+RUN mkdir /app && chown -R 1000:1000 /app
+
+# Set working directory
 WORKDIR /app
 
-# Create non-root user with UID 1000 and set permissions
-RUN adduser --disabled-password --gecos '' --uid 1000 appuser && \
-    chown -R 1000:1000 /app
+# Copy dependencies first
+COPY requirements.txt /app/requirements.txt
 
-# Copy requirements and install dependencies
-COPY requirements.txt .
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source code after installing deps
-COPY . .
+# Copy the rest of the project files
+COPY . /app
 
-# Set environment variables
+# Ensure all files are owned by UID 1000
+RUN chown -R 1000:1000 /app
+
+# Set environment variable for Hugging Face Space port
 ENV APP_PORT=7126
 
-# Expose port
+# Expose the port
 EXPOSE 7126
 
-# Explicitly switch to UID 1000 (this is the key line)
+# Switch to UID 1000 explicitly
 USER 1000
 
-# Launch FastAPI app
+# Launch FastAPI app on all interfaces
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7126"]
+
