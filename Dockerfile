@@ -1,31 +1,28 @@
+# Base image
 FROM python:3.11-slim
 
-# create non-root user with UID 1000
-RUN groupadd -g 1000 appuser \
- && useradd -m -u 1000 -g appuser appuser
+# Create a non-root user with UID 1000
+RUN useradd -m -u 1000 appuser
 
-ENV APP_PORT=7126
-EXPOSE 7126
-
+# Set working directory
 WORKDIR /app
 
-# Copy & install dependencies first (cache)
-COPY requirements.txt /app/requirements.txt
-RUN apt-get update \
- && apt-get install -y --no-install-recommends gcc build-essential ca-certificates \
- && python -m pip install --upgrade pip \
- && pip install --no-cache-dir -r /app/requirements.txt \
- && apt-get remove -y gcc build-essential \
- && apt-get autoremove -y \
- && rm -rf /var/lib/apt/lists/*
+# Copy and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app files
-COPY . /app
+# Copy all project files
+COPY . .
 
-# Make sure non-root user owns everything
-RUN chown -R appuser:appuser /app
+# Set environment variable for app port
+ENV APP_PORT=7126
 
+# Expose the app port
+EXPOSE 7126
+
+# Use non-root user
 USER appuser
 
-# Run uvicorn using the APP_PORT env var
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $APP_PORT --workers 1"]
+# Start the FastAPI app
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7126"]
+
