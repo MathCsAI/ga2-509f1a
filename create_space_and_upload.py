@@ -41,3 +41,4 @@ except Exception as e:
 
 print("Next: go to the Space on Hugging Face and add the secret GA2_TOKEN_0DBE in Settings → Secrets.")
 print("When the Space builds, you'll find it at: https://huggingface.co/spaces/{}/{}".format(HF_USER, SPACE_NAME))
+
